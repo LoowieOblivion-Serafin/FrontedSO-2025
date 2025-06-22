@@ -34,7 +34,7 @@ public class MonitorController {
     private ObservableList<Proceso> listaDeProcesos;
 
     /**
-     * El método initialize() es llamado automáticamente por JavaFX
+     * El met-odo itialize() es llamado automáticamente por JavaFX
      * después de que el archivo FXML ha sido cargado.
      * Es el lugar perfecto para configurar nuestra tabla y cargar datos iniciales.
      */
@@ -54,9 +54,8 @@ public class MonitorController {
         listaDeProcesos = FXCollections.observableArrayList();
         tablaProcesos.setItems(listaDeProcesos);
 
-        // 4. Cargamos datos de prueba para verificar que todo funciona.
-        // Más adelante, esto será reemplazado por los datos del socket.
-        cargarDatosDePrueba();
+        // 4. Cargamos datos de prueba para verificar si funciona
+        // Más adelante, esto será reemplazado por los datos del socket.cargarDatosDePrueba();
 
         etiquetaEstado.setText("Procesos: " + listaDeProcesos.size());
     }
