@@ -4,9 +4,15 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
- import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
+import javafx.application.Platform;
+
+import java.io.IOException;
 
 public class MonitorController {
     // 1. Enlazamos los componentes del FXML con variables Java.
@@ -19,8 +25,6 @@ public class MonitorController {
     @FXML
     private TableColumn<Proceso, String> columnaNombre;
     @FXML
-    private TableColumn<Proceso, String> columnaUsuario;
-    @FXML
     private TableColumn<Proceso, String> columnaEstado;
     @FXML
     private TableColumn<Proceso, Double> columnaCPU;
@@ -32,6 +36,7 @@ public class MonitorController {
     // Esta es la lista "observable" que contendrá los datos.
     // La TableView la "observará" y se actualizará sola cuando esta lista cambie.
     private ObservableList<Proceso> listaDeProcesos;
+    private ClienteSocket cliente;
 
     /**
      * El met-odo itialize() es llamado automáticamente por JavaFX
@@ -45,7 +50,6 @@ public class MonitorController {
         // de la propiedad en la clase Proceso.java (ej. pidProperty() -> "pid").
         columnaPID.setCellValueFactory(new PropertyValueFactory<>("pid"));
         columnaNombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
-        columnaUsuario.setCellValueFactory(new PropertyValueFactory<>("usuario"));
         columnaEstado.setCellValueFactory(new PropertyValueFactory<>("estado"));
         columnaCPU.setCellValueFactory(new PropertyValueFactory<>("cpu"));
         columnaMemoria.setCellValueFactory(new PropertyValueFactory<>("memoria"));
@@ -54,16 +58,38 @@ public class MonitorController {
         listaDeProcesos = FXCollections.observableArrayList();
         tablaProcesos.setItems(listaDeProcesos);
 
-        // 4. Cargamos datos de prueba para verificar si funciona
-        // Más adelante, esto será reemplazado por los datos del socket.cargarDatosDePrueba();
+        try {
+            cliente = new ClienteSocket();
+        } catch (IOException e) {
+            etiquetaEstado.setText("Error al conectar con el servidor.");
+            e.printStackTrace();
+            return;
+        }
 
-        etiquetaEstado.setText("Procesos: " + listaDeProcesos.size());
+        cargarDesdeSocket();
+        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> cargarDesdeSocket()));
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.play();
+
     }
 
-    private void cargarDatosDePrueba() {
-        listaDeProcesos.add(new Proceso(1001, "firefox", "alvaro", "Running", 15.5, 520.8));
-        listaDeProcesos.add(new Proceso(1002, "java", "alvaro", "Running", 8.2, 1024.5));
-        listaDeProcesos.add(new Proceso(1003, "systemd", "root", "Sleeping", 0.1, 50.2));
-        listaDeProcesos.add(new Proceso(1004, "code", "alvaro", "Sleeping", 5.7, 850.0));
+    // cargar los datos en segundo plano desde el socket
+    private void cargarDesdeSocket() {
+        new Thread(() -> {
+            try {
+                var procesos = cliente.consultarProcesos();
+                Platform.runLater(() -> {
+                    listaDeProcesos.setAll(procesos);
+                    etiquetaEstado.setText("Procesos: " + procesos.size());
+                });
+            } catch (IOException e) {
+                Platform.runLater(() -> etiquetaEstado.setText("Error al leer del servidor."));
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    public ClienteSocket getCliente() {
+        return cliente;
     }
 }

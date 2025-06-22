@@ -8,15 +8,28 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class MonitorApplication extends Application {
+
+    private MonitorController controlador;
+
     @Override
     public void start(Stage stage) throws IOException {
         // Le añadimos una barra "/" al principio de la ruta completa del paquete.
 // Esto le dice a Java que busque desde la raíz de los recursos, lo cual es más seguro.
         FXMLLoader fxmlLoader = new FXMLLoader(MonitorApplication.class.getResource("/com/uni/pe/monitorprocesoslinux/monitor-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 800, 600);
+        Scene scene = new Scene(fxmlLoader.load(), 700, 600);
         stage.setTitle("MONITOR DE PROCESOS DE LINUX");
         stage.setScene(scene);
         stage.show();
+
+        controlador = fxmlLoader.getController();
+    }
+    // para cerrar el socket al cerrar la aplicación
+    @Override
+    public void stop() throws Exception {
+        if (controlador != null && controlador.getCliente() != null) {
+            controlador.getCliente().cerrar(); // cerramos el socket
+        }
+        super.stop();
     }
 
     public static void main(String[] args) {
